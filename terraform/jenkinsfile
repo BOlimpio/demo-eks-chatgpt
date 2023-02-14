@@ -2,6 +2,7 @@ pipeline {
     agent any
     parameters {
         choice(name: 'TERRAFORM_ACTION', choices: ['Create/Update', 'Destroy'], description: 'What action will be performed with Terraform? ')
+        string(name: 'E-mail', defaultValue: 'you@example.com', description: 'Who will receive the status of pipeline execution?')
     }
     tools {
        terraform 'Terraform'
