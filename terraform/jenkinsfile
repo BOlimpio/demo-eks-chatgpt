@@ -2,7 +2,7 @@ pipeline {
     agent any
     parameters {
         choice(name: 'TERRAFORM_ACTION', choices: ['Create/Update', 'Destroy'], description: 'What action will be performed with Terraform? ')
-        string(name: 'E-mail', defaultValue: 'you@example.com', description: 'Who will receive the status of pipeline execution?')
+        string(name: 'Email', defaultValue: 'you@example.com', description: 'Who will receive the status of pipeline execution?')
     }
     tools {
        terraform 'Terraform'
@@ -14,6 +14,9 @@ pipeline {
         //     }
         // }
         stage('Verify Infracost Installation') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Create/Update' }
+            }  
             steps {
                 sh '''
                 if ! [ -x "$(command -v infracost)" ]; thenwithAWS(credentials: 'aws-bruno-credencials')
@@ -27,6 +30,9 @@ pipeline {
             }
         }
         stage('Verify TFLint Installation') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Create/Update' }
+            }
             steps {
                 sh '''
                 if ! [ -x "$(command -v tflint)" ]; then
@@ -47,6 +53,9 @@ pipeline {
             }
         }
         stage('Test Terraform Deployment') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Create/Update' }
+            }  
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
                     terraformPlan args: "-out=plan.out"
@@ -56,10 +65,29 @@ pipeline {
             }
         }
         stage('Approve Terraform Deployment') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Create/Update' }
+            }  
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
                     input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
                     terraformApply args: "plan.out"
+                }
+            }
+            post {
+                failure {
+                    echo "No action was taken within the time frame. The pipeline has been refused."
+                }
+            }
+        }
+        stage('Destroy Terraform Deployment') {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Destroy' }
+            }
+            steps {
+                withAWS(credentials: 'aws-bruno-credencials'){
+                    input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
+                    terraformDestroy()
                 }
             }
             post {
@@ -80,7 +108,7 @@ pipeline {
                 "Duration: ${currentBuild.durationString}\n" + 
                 "Status: Success\n", 
             subject: "Jenkins pipeline '${env.JOB_NAME} [${env.BUILD_NUMBER}]' - Success", 
-            to: 'you@example.com'
+            to: ${params.Email}
         }
         failure {
             emailext attachmentsPattern: '', 
@@ -93,7 +121,7 @@ pipeline {
                 "Status: Failure\n" + 
                 "Error Message: ${currentBuild.result}\n", 
             subject: "Jenkins pipeline '${env.JOB_NAME} [${env.BUILD_NUMBER}]' - Failure", 
-            to: 'you@example.com'
+            to: ${params.Email}
         }
     }
 }
