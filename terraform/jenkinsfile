@@ -126,6 +126,4 @@ pipeline {
     }
 }
 
-// Install the Email-ext plugin: Go to the Manage Jenkins > Plugin Manager, search for “Email-ext”, select the plugin and install it.
-// Configure the email notifications: Go to Manage Jenkins > Configure System and scroll down to the “Extended E-mail Notification” section. Fill in the SMTP server, port number, and credentials required to connect to your email server.
-// Verify terraform plugin for jenkins
+// configure smtp server in yout outlook account
