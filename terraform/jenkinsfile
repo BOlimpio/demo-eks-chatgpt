@@ -1,0 +1,96 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
+    }
+
+    stages {
+        stage('Checkout Terraform Code') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'github-credentials', url: 'https://github.com/user/terraform-repo.git']]])
+            }
+        }
+        stage('Verify Infracost Installation') {
+            steps {
+                sh '''
+                if ! [ -x "$(command -v infracost)" ]; then
+                    echo "Infracost is not installed. Installing Infracost."
+                    curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sudo bash
+                    infracost auth login
+                else
+                    echo "Infracost is already installed."
+                fi
+                '''
+            }
+        }
+        stage('Verify TFLint Installation') {
+            steps {
+                sh '''
+                if ! [ -x "$(command -v tflint)" ]; then
+                    echo "TFLint is not installed. Installing TFLint."
+                    curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+                else
+                    echo "TFLint is already installed."
+                fi
+                '''
+            }
+        }
+        stage('Validate Terraform Code') {
+            steps {
+                terraformInit()
+                terraformValidate()
+            }
+        }
+        stage('Test Terraform Deployment') {
+            steps {
+                terraformPlan args: "-out=plan.out"
+                tflint()
+                sh "infracost plan --input=plan.out"
+            }
+        }
+        stage('Approve Terraform Deployment') {
+            steps {
+                input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
+                terraformApply args: "plan.out"
+            }
+            post {
+                failure {
+                    echo "No action was taken within the time frame. The pipeline has been refused."
+                }
+            }
+        }
+    }    
+    post {
+        success {
+            emailext attachmentsPattern: '', 
+            body: "The pipeline '${env.JOB_NAME} [${env.BUILD_NUMBER}]' completed successfully by ${env.BUILD_CAUSE_USERID}.\n\n" + 
+                "Pipeline URL: ${env.BUILD_URL}\n\n" + 
+                "Build Number: ${env.BUILD_NUMBER}\n" + 
+                "Start Time: ${env.BUILD_ID}\n" + 
+                "End Time: ${currentBuild.currentTime}\n" + 
+                "Duration: ${currentBuild.durationString}\n" + 
+                "Status: Success\n", 
+            subject: "Jenkins pipeline '${env.JOB_NAME} [${env.BUILD_NUMBER}]' - Success", 
+            to: 'you@example.com'
+        }
+        failure {
+            emailext attachmentsPattern: '', 
+            body: "The pipeline '${env.JOB_NAME} [${env.BUILD_NUMBER}]' failed by ${env.BUILD_CAUSE_USERID}.\n\n" + 
+                "Pipeline URL: ${env.BUILD_URL}\n\n" + 
+                "Build Number: ${env.BUILD_NUMBER}\n" + 
+                "Start Time: ${env.BUILD_ID}\n" + 
+                "End Time: ${currentBuild.currentTime}\n" + 
+                "Duration: ${currentBuild.durationString}\n" + 
+                "Status: Failure\n" + 
+                "Error Message: ${currentBuild.result}\n", 
+            subject: "Jenkins pipeline '${env.JOB_NAME} [${env.BUILD_NUMBER}]' - Failure", 
+            to: 'you@example.com'
+        }
+    }
+}
+
+// Install the Email-ext plugin: Go to the Manage Jenkins > Plugin Manager, search for “Email-ext”, select the plugin and install it.
+// Configure the email notifications: Go to Manage Jenkins > Configure System and scroll down to the “Extended E-mail Notification” section. Fill in the SMTP server, port number, and credentials required to connect to your email server.
+// Verify terraform plugin for jenkins

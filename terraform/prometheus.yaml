@@ -1,0 +1,59 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+- job_name: 'demo-eks-chatgpt'
+  static_configs:
+  - targets: ['<demo-eks-chatgpt-service>:5000'] #Include right target
+    labels:
+      app: 'demo-eks-chatgpt'
+  metrics_path: '/metrics'
+  honor_labels: true
+
+
+# command to get prometheus hostname to use in grafana datasource
+#kubectl get service prometheus-server -n prometheus -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+
+
+
+# Another option of prometheus.yml configuration
+
+
+# global:
+#   scrape_interval: 15s
+#   scrape_timeout: 10s
+
+# scrape_configs:
+#   - job_name: 'demo-eks-chatgpt'
+#     static_configs:
+#       - targets: ['demo-eks-chatgpt:5000']
+#     metric_relabel_configs:
+#       - source_labels: [__name__]
+#         regex: 'demo_eks_chatgpt_requests_total'
+#         target_label: 'demo_eks_chatgpt_requests_total'
+#       - source_labels: [__name__]
+#         regex: 'demo_eks_chatgpt_request_latency_seconds_sum'
+#         target_label: 'demo_eks_chatgpt_request_latency_seconds_sum'
+#       - source_labels: [__name__]
+#         regex: 'demo_eks_chatgpt_request_latency_seconds_count'
+#         target_label: 'demo_eks_chatgpt_request_latency_seconds_count'
+#     relabel_configs:
+#       - source_labels: [__address__]
+#         target_label: instance
+#       - source_labels: [__meta_ec2_tag_Role]
+#         target_label: role
+#       - source_labels: [__meta_ec2_tag_Environment]
+#         target_label: environment
+#       - source_labels: [__meta_ec2_tag_Service]
+#         target_label: service
+#       - source_labels: [__meta_ec2_tag_Version]
+#         target_label: version
+#       - source_labels: [job]
+#         target_label: job
+#       - source_labels: [__meta_ec2_instance_id]
+#         target_label: instance_id
+#       - source_labels: [__meta_ec2_private_ip]
+#         target_label: private_ip
+#       - source_labels: [__meta_ec2_public_ip]
+#         target_label: public_ip
