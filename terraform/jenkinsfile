@@ -1,21 +1,21 @@
 pipeline {
     agent any
-
-    environment {
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
+    parameters {
+        choice(name: 'TERRAFORM_ACTION', choices: ['Create/Update', 'Destroy'], description: 'What action will be performed with Terraform? ')
     }
-
+    tools {
+       terraform 'Terraform'
+    }
     stages {
-        stage('Checkout Terraform Code') {
-            steps {
-                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'github-credentials', url: 'https://github.com/user/terraform-repo.git']]])
-            }
-        }
+        // stage('Checkout Terraform Code') {
+        //     steps {
+        //         checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'github-credentials', url: 'https://github.com/user/terraform-repo.git']]])
+        //     }
+        // }
         stage('Verify Infracost Installation') {
             steps {
                 sh '''
-                if ! [ -x "$(command -v infracost)" ]; then
+                if ! [ -x "$(command -v infracost)" ]; thenwithAWS(credentials: 'aws-bruno-credencials')
                     echo "Infracost is not installed. Installing Infracost."
                     curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sudo bash
                     infracost auth login
@@ -39,21 +39,27 @@ pipeline {
         }
         stage('Validate Terraform Code') {
             steps {
-                terraformInit()
-                terraformValidate()
+                withAWS(credentials: 'aws-bruno-credencials'){
+                    terraformInit()
+                    terraformValidate()    
+                }
             }
         }
         stage('Test Terraform Deployment') {
             steps {
-                terraformPlan args: "-out=plan.out"
-                tflint()
-                sh "infracost plan --input=plan.out"
+                withAWS(credentials: 'aws-bruno-credencials'){
+                    terraformPlan args: "-out=plan.out"
+                    tflint()
+                    sh "infracost plan --input=plan.out" 
+                }
             }
         }
         stage('Approve Terraform Deployment') {
             steps {
-                input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
-                terraformApply args: "plan.out"
+                withAWS(credentials: 'aws-bruno-credencials'){
+                    input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
+                    terraformApply args: "plan.out"
+                }
             }
             post {
                 failure {
