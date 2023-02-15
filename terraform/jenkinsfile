@@ -19,7 +19,7 @@ pipeline {
             }  
             steps {
                 sh '''
-                if ! [ -x "$(command -v infracost)" ]; thenwithAWS(credentials: 'aws-bruno-credencials')
+                if ! [ -x "$(command -v infracost)" ]; then
                     echo "Infracost is not installed. Installing Infracost."
                     curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sudo bash
                     infracost auth login
