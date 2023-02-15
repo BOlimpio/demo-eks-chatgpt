@@ -21,7 +21,7 @@ pipeline {
                 sh '''
                 if ! [ -x "$(command -v infracost)" ]; then
                     echo "Infracost is not installed. Installing Infracost."
-                    curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sudo -S bash
+                    curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sudo bash
                     infracost auth login
                 else
                     echo "Infracost is already installed."
@@ -37,7 +37,7 @@ pipeline {
                 sh '''
                 if ! [ -x "$(command -v tflint)" ]; then
                     echo "TFLint is not installed. Installing TFLint."
-                    curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+                    curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | sudo bash
                 else
                     echo "TFLint is already installed."
                 fi
