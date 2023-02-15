@@ -70,7 +70,7 @@ pipeline {
             }  
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
-                    input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
+                    input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', time: 5, submitterParameter: 'proceed'
                     terraformApply args: "plan.out"
                 }
             }
@@ -86,7 +86,7 @@ pipeline {
             }
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
-                    input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
+                    input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', time: 5, submitterParameter: 'proceed'
                     terraformDestroy()
                 }
             }
@@ -108,7 +108,7 @@ pipeline {
                 "Duration: ${currentBuild.durationString}\n" + 
                 "Status: Success\n", 
             subject: "Jenkins pipeline '${env.JOB_NAME} [${env.BUILD_NUMBER}]' - Success", 
-            to: ${params.Email}
+            to: "${params.Email}"
         }
         failure {
             emailext attachmentsPattern: '', 
@@ -121,7 +121,7 @@ pipeline {
                 "Status: Failure\n" + 
                 "Error Message: ${currentBuild.result}\n", 
             subject: "Jenkins pipeline '${env.JOB_NAME} [${env.BUILD_NUMBER}]' - Failure", 
-            to: ${params.Email}
+            to: "${params.Email}"
         }
     }
 }
