@@ -86,16 +86,38 @@ pipeline {
             }
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
-                    input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', time: 5, submitterParameter: 'proceed'
+                    input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', submitter: 'anyone', parameters: [
+                        [$class: 'org.jenkinsci.plugins.workflow.support.steps.input.InputStep$InputStepExecution', inputId: 'yesNo', message: 'Do you want to proceed?', submitterParameter: 'submitter', submitter: 'anyone', inputs: [
+                            [$class: 'org.jenkinsci.plugins.workflow.input.BooleanParameterDefinition', description: '', name: 'proceed', defaultValue: false]
+                        ], timeout: time(5, 'MINUTES'), ok: 'Proceed', failOnTimeout: true]
+                    ]
                     terraformDestroy()
                 }
             }
             post {
                 failure {
                     echo "No action was taken within the time frame. The pipeline has been refused."
+                    currentBuild.result = 'ABORTED'
                 }
             }
         }
+
+        // stage('Destroy Terraform Deployment') {
+        //     when {
+        //         expression { params.TERRAFORM_ACTION == 'Destroy' }
+        //     }
+        //     steps {
+        //         withAWS(credentials: 'aws-bruno-credencials'){
+        //             input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', time: 5, submitterParameter: 'proceed'
+        //             terraformDestroy()
+        //         }
+        //     }
+        //     post {
+        //         failure {
+        //             echo "No action was taken within the time frame. The pipeline has been refused."
+        //         }
+        //     }
+        // }
     }    
     post {
         success {
