@@ -70,7 +70,7 @@ pipeline {
             }  
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
-                    input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
+                    input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', submitter: 'anyone', parameters: [timeout(time: 5, unit: 'MINUTES')]
                     terraformApply args: "plan.out"
                 }
             }
