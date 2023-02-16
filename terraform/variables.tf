@@ -30,21 +30,6 @@ locals {
   azs = slice(data.aws_availability_zones.available.names, 0, 3)
 }
 
-variable "worker_group  s_launch_template" {
-  type = list(object({
-    instance_type = string
-    asg_desired_capacity = number
-    asg_max_size = number
-  }))
-  default = [
-    {
-      instance_type = "t2.small"
-      asg_desired_capacity = 2
-      asg_max_size = 4
-    }
-  ]
-}
-
 variable "vpc_name" {
   type = string
   default = "my-vpc-chatgpt"
