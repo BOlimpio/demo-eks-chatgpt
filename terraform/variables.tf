@@ -17,13 +17,18 @@ variable "tags" {
   }
 }
 
+# variable "azs" {
+#   type = list(string)
+#   default = [
+#     data.aws_availability_zones.available.names[0],
+#     data.aws_availability_zones.available.names[1],
+#     data.aws_availability_zones.available.names[2]
+#   ]
+# }
+
 variable "azs" {
-  type = list(string)
-  default = [
-    data.aws_availability_zones.available.names[0],
-    data.aws_availability_zones.available.names[1],
-    data.aws_availability_zones.available.names[2]
-  ]
+  type    = list(string)
+  default = slice(data.aws_availability_zones.available.names, 0, 3)
 }
 
 variable "worker_group  s_launch_template" {
