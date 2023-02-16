@@ -47,6 +47,7 @@ pipeline {
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
                     sh "terraform init"
+                    sh "ls"
                     sh "terraform validate"  
                 }
             }
