@@ -22,7 +22,6 @@ pipeline {
                 if ! [ -x "$(command -v infracost)" ]; then
                     echo "Infracost is not installed. Installing Infracost."
                     curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sudo bash
-                    infracost auth login
                 else
                     echo "Infracost is already installed."
                 fi
@@ -47,8 +46,8 @@ pipeline {
         stage('Validate Terraform Code') {
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
-                    terraformInit()
-                    terraformValidate()    
+                    sh "terraform init"
+                    sh "terraform validate"  
                 }
             }
         }
@@ -58,8 +57,8 @@ pipeline {
             }  
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
-                    terraformPlan args: "-out=plan.out"
-                    tflint()
+                    sh "terraform plan -out=plan.out"
+                    sh "tflint"
                     sh "infracost plan --input=plan.out" 
                 }
             }
@@ -71,7 +70,7 @@ pipeline {
             steps {
                 withAWS(credentials: 'aws-bruno-credencials'){
                     input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', submitter: 'anyone', parameters: [timeout(time: 5, unit: 'MINUTES')]
-                    terraformApply args: "plan.out"
+                    sh "terraform apply plan.out"
                 }
             }
             post {
@@ -88,7 +87,7 @@ pipeline {
                 withAWS(credentials: 'aws-bruno-credencials'){
                     input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', submitter: 'anyone', parameters: [timeout(time: 5, unit: 'MINUTES')]
                     //input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
-                    terraformDestroy()
+                    sh "terraform destroy -auto-approve"
                 }
             }
             post {
