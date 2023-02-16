@@ -29,10 +29,6 @@ variable "tags" {
 locals {
   azs = slice(data.aws_availability_zones.available.names, 0, 3)
 }
-variable "azs" {
-  type    = list(string)
-  default = local.azs
-}
 
 variable "worker_group  s_launch_template" {
   type = list(object({
