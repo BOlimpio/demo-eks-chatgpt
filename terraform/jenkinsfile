@@ -14,11 +14,11 @@ pipeline {
         //     }
         // }
         stage('Verify Infracost Installation') {
-            dir('terraform'){
-                when {
-                    expression { params.TERRAFORM_ACTION == 'Create/Update' }
-                }  
-                steps {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Create/Update' }
+            }  
+            steps {
+                dir('terraform') {
                     sh '''
                     if ! [ -x "$(command -v infracost)" ]; then
                         echo "Infracost is not installed. Installing Infracost."
@@ -31,11 +31,11 @@ pipeline {
             }
         }
         stage('Verify TFLint Installation') {
-            dir('terraform'){
-                when {
-                    expression { params.TERRAFORM_ACTION == 'Create/Update' }
-                }
-                steps {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Create/Update' }
+            }
+            steps {
+                dir('terraform') {
                     sh '''
                     if ! [ -x "$(command -v tflint)" ]; then
                         echo "TFLint is not installed. Installing TFLint."
@@ -48,22 +48,21 @@ pipeline {
             }
         }
         stage('Validate Terraform Code') {
-            dir('terraform'){
-                steps {
+            steps {
+                dir('terraform') {
                     withAWS(credentials: 'aws-bruno-credencials'){
                         sh "terraform init"
-                        sh "ls"
                         sh "terraform validate"  
                     }
                 }
             }
         }
         stage('Test Terraform Deployment') {
-            dir('terraform'){
-                when {
-                    expression { params.TERRAFORM_ACTION == 'Create/Update' }
-                }  
-                steps {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Create/Update' }
+            }  
+            steps {
+                dir('terraform') {
                     withAWS(credentials: 'aws-bruno-credencials'){
                         sh "terraform plan -out=plan.out"
                         sh "tflint"
@@ -73,39 +72,39 @@ pipeline {
             }
         }
         stage('Approve Terraform Deployment') {
-            dir('terraform'){
-                when {
-                    expression { params.TERRAFORM_ACTION == 'Create/Update' }
-                }  
-                steps {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Create/Update' }
+            }  
+            steps {
+                dir('terraform') {
                     withAWS(credentials: 'aws-bruno-credencials'){
                         input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', submitter: 'anyone', parameters: [timeout(time: 5, unit: 'MINUTES')]
                         sh "terraform apply plan.out"
                     }
                 }
-                post {
-                    failure {
-                        echo "No action was taken within the time frame. The pipeline has been refused."
-                    }
+            }
+            post {
+                failure {
+                    echo "No action was taken within the time frame. The pipeline has been refused."
                 }
             }
         }
         stage('Destroy Terraform Deployment') {
-            dir('terraform'){
-                when {
-                    expression { params.TERRAFORM_ACTION == 'Destroy' }
-                }
-                steps {
+            when {
+                expression { params.TERRAFORM_ACTION == 'Destroy' }
+            }
+            steps {
+                dir('terraform') {
                     withAWS(credentials: 'aws-bruno-credencials'){
                         input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', submitter: 'anyone', parameters: [timeout(time: 5, unit: 'MINUTES')]
                         //input message: 'Do you want to destroy the Terraform infrastructure?', ok: 'Destroy', id: 'approve_terraform_deployment', timeout: 10, submitter: 'anyone'
                         sh "terraform destroy -auto-approve"
                     }
                 }
-                post {
-                    failure {
-                        echo "No action was taken within the time frame. The pipeline has been refused."
-                    }
+            }
+            post {
+                failure {
+                    echo "No action was taken within the time frame. The pipeline has been refused."
                 }
             }
         }
