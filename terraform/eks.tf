@@ -37,32 +37,32 @@ module "eks" {
       desired_size = 2
     }
   }
-  
-  depends_on = [module.vpc]
-}
-
-module "eks" {
-  source = "terraform-aws-modules/eks/aws"
-
-  cluster_name = var.cluster_name
-  subnet_ids = module.vpc.private_subnets
-  vpc_id = module.vpc.vpc_id
-  cluster_endpoint_public_access = true
-  tags = var.tags
-  eks_managed_node_groups = {
-    one = {
-      name = "chatgpt-ng-1"
-
-      instance_types = ["t3.small"]
-
-      min_size     = 1
-      max_size     = 3
-      desired_size = 2
-    }
-  }
 
   depends_on = [module.vpc]
 }
+
+# module "eks" {
+#   source = "terraform-aws-modules/eks/aws"
+
+#   cluster_name = var.cluster_name
+#   subnet_ids = module.vpc.private_subnets
+#   vpc_id = module.vpc.vpc_id
+#   cluster_endpoint_public_access = true
+#   tags = var.tags
+#   eks_managed_node_groups = {
+#     one = {
+#       name = "chatgpt-ng-1"
+
+#       instance_types = ["t3.small"]
+
+#       min_size     = 1
+#       max_size     = 3
+#       desired_size = 2
+#     }
+#   }
+
+#   depends_on = [module.vpc]
+# }
 
 # Deploy Prometheus using Helm
 resource "helm_release" "prometheus" {
