@@ -22,13 +22,6 @@ module "eks_blueprints" {
   vpc_id             = module.vpc.vpc_id                              # Enter VPC ID
   private_subnet_ids = module.vpc.private_subnets                     # Enter Private Subnet IDs
 
-  # EKS Addons
-  cluster_addons = {
-    coredns    = {}
-    kube-proxy = {}
-    vpc-cni    = {}
-  }
-
   # EKS MANAGED NODE GROUPS
   managed_node_groups = {
     mng = {
@@ -47,6 +40,19 @@ module "eks_blueprints" {
   }
 
   depends_on = [module.vpc]
+}
+
+module "addons" {
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons"
+
+  eks_cluster_id = module.eks_blueprints.eks_cluster_id
+
+  # EKS addons
+  enable_amazon_eks_vpc_cni = true
+  enable_amazon_eks_coredns = true
+  enable_amazon_eks_kube_proxy = true
+
+  depends_on = [module.eks_blueprints]
 }
 
 # Deploy Prometheus using Helm
