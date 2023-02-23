@@ -12,49 +12,7 @@ module "vpc" {
   tags = var.tags
 }
 
-//ToDo USE EKS BLUEPRINTS
-
-module "eks_blueprints" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints"
-
-  # EKS CLUSTER
-  cluster_version    = "1.24"                                         # EKS Cluster Version
-  vpc_id             = module.vpc.vpc_id                              # Enter VPC ID
-  private_subnet_ids = module.vpc.private_subnets                     # Enter Private Subnet IDs
-
-  # EKS MANAGED NODE GROUPS
-  managed_node_groups = {
-    mng = {
-      node_group_name = "chatgpt-ng-1"
-      instance_types  = ["t3.medium"]
-      subnet_ids      = module.vpc.private_subnets  # Mandatory Public or Private Subnet IDs
-      disk_size       = 50 # disk_size will be ignored when using Launch Templates
-      # capacity_type   = "ON_DEMAND"  # ON_DEMAND or SPOT
-      # ami_type        = "AL2_x86_64" # Amazon Linux 2(AL2_x86_64), AL2_x86_64_GPU, AL2_ARM_64, BOTTLEROCKET_x86_64, BOTTLEROCKET_ARM_64
-      # create_iam_role = false # default is true; set to false to bring your own IAM Role with iam_role_arn option
-      # iam_role_arn    = "arn:aws:iam::021889093106:role/AmazonEKSNodeRole" # Node groups creates a new IAM role if `iam_role_arn` is not specified
-      # # Node Group scaling configuration
-      # desired_size    = 2
-      # max_size        = 3
-      # min_size        = 1
-    }
-  }
-
-  depends_on = [module.vpc]
-}
-
-module "addons" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints//modules/kubernetes-addons"
-
-  eks_cluster_id = module.eks_blueprints.eks_cluster_id
-
-  # EKS addons
-  enable_amazon_eks_vpc_cni = true
-  enable_amazon_eks_coredns = true
-  enable_amazon_eks_kube_proxy = true
-
-  depends_on = [module.eks_blueprints]
-}
+//ToDo create eks cluster and worker nodes with native resources
 
 # Deploy Prometheus using Helm
 resource "helm_release" "prometheus" {
