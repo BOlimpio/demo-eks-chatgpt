@@ -51,7 +51,7 @@ pipeline {
             steps {
                 dir('terraform') {
                     withAWS(credentials: 'aws-bruno-credencials'){
-                        sh "terraform init -upgrade"
+                        sh "terraform init"
                         sh "terraform validate"  
                     }
                 }
