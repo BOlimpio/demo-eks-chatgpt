@@ -23,9 +23,11 @@ module "eks_blueprints" {
   private_subnet_ids = module.vpc.private_subnets                     # Enter Private Subnet IDs
 
   # EKS Addons
-  enable_amazon_eks_vpc_cni = true
-  enable_amazon_eks_coredns = true
-  enable_amazon_eks_kube_proxy = true
+  cluster_addons = {
+    coredns    = {}
+    kube-proxy = {}
+    vpc-cni    = {}
+  }
 
   # EKS MANAGED NODE GROUPS
   managed_node_groups = {
