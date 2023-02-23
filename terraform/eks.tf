@@ -31,7 +31,8 @@ module "eks_blueprints" {
       disk_size       = 100 # disk_size will be ignored when using Launch Templates
       capacity_type   = "ON_DEMAND"  # ON_DEMAND or SPOT
       ami_type        = "AL2_x86_64" # Amazon Linux 2(AL2_x86_64), AL2_x86_64_GPU, AL2_ARM_64, BOTTLEROCKET_x86_64, BOTTLEROCKET_ARM_64
-
+      create_iam_role = false # default is true; set to false to bring your own IAM Role with iam_role_arn option
+      iam_role_arn    = "arn:aws:iam::021889093106:role/AmazonEKSNodeRole" # Node groups creates a new IAM role if `iam_role_arn` is not specified
       # Node Group scaling configuration
       desired_size    = 2
       max_size        = 3
