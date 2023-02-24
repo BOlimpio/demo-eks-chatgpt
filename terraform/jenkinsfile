@@ -78,7 +78,7 @@ pipeline {
             steps {
                 dir('terraform') {
                     withAWS(credentials: 'aws-bruno-credencials'){
-                        input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment', submitter: 'anyone', parameters: [timeout(time: 5, unit: 'MINUTES')]
+                        input message: 'Do you want to apply this Terraform plan?', ok: 'Apply', id: 'approve_terraform_deployment'
                         sh "terraform apply plan.out"
                     }
                 }
@@ -116,7 +116,6 @@ pipeline {
                 "Pipeline URL: ${env.BUILD_URL}\n\n" + 
                 "Build Number: ${env.BUILD_NUMBER}\n" + 
                 "Start Time: ${env.BUILD_ID}\n" + 
-                "End Time: ${currentBuild.currentTime}\n" + 
                 "Duration: ${currentBuild.durationString}\n" + 
                 "Status: Success\n", 
             subject: "Jenkins pipeline '${env.JOB_NAME} [${env.BUILD_NUMBER}]' - Success", 
@@ -128,7 +127,6 @@ pipeline {
                 "Pipeline URL: ${env.BUILD_URL}\n\n" + 
                 "Build Number: ${env.BUILD_NUMBER}\n" + 
                 "Start Time: ${env.BUILD_ID}\n" + 
-                "End Time: ${currentBuild.currentTime}\n" + 
                 "Duration: ${currentBuild.durationString}\n" + 
                 "Status: Failure\n" + 
                 "Error Message: ${currentBuild.result}\n", 
