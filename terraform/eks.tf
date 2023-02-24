@@ -1,45 +1,69 @@
-module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
-
-  name = var.vpc_name
-  cidr = var.vpc_cidr
-  azs = local.azs
-  enable_ipv6 = true
-  enable_nat_gateway = false
-  single_nat_gateway = true
-  private_subnets = var.private_subnets
-  public_subnets = var.public_subnets
-  tags = var.tags
-}
-
 //ToDo create eks cluster and worker nodes with native resources
-
-module "eks_blueprints" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.21.0"
-
-  cluster_name    = "chatGPT-cluster"
-
-  # EKS Cluster VPC and Subnet mandatory config
-  vpc_id             = module.vpc.vpc_id
-  private_subnet_ids = module.vpc.private_subnets
-
-  # EKS CONTROL PLANE VARIABLES
-  cluster_version = "1.24"
-
-  # EKS MANAGED NODE GROUPS
-  managed_node_groups = {
-    mg_5 = {
-      node_group_name = "ng_chatGPT"
-      instance_types  = ["t3.medium"]
-      subnet_ids      = module.vpc.private_subnets
-    }
+resource "aws_eks_cluster" "chatgpt_cluster" {
+  name = "eks-chatgpt-cluster"
+  role_arn = aws_iam_role.eks_cluster.arn
+  vpc_config {
+    subnet_ids = module.vpc.private_subnets
   }
-
-  depends_on = [
-    module.vpc,
-  ]
-
+  depends_on = [module.vpc]
 }
+
+resource "aws_iam_role" "eks_cluster" {
+  name = "eks-cluster"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "eks.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cluster" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+  role       = aws_iam_role.eks_cluster.name
+}
+
+resource "aws_eks_node_group" "ng_chatgpt" {
+  cluster_name    = aws_eks_cluster.chatgpt_cluster.name
+  node_group_name = "my-worker-node-group"
+  node_role_arn   = aws_iam_role.eks_worker.arn
+  subnet_ids      = module.vpc.private_subnets
+  scaling_config {
+    desired_size = 2
+    max_size     = 2
+    min_size     = 2
+  }
+  depends_on = [aws_eks_cluster.chatgpt_cluster, aws_iam_role.eks_worker]
+}
+
+resource "aws_iam_role" "eks_worker" {
+  name = "eks-worker"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "eks_worker" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+  role       = aws_iam_role.eks_worker.name
+}
+
+resource "aws_iam_instance_profile" "eks_worker" {
+  name = "eks-worker"
+  role = aws_iam_role.eks_worker.name
+}
+
 
 # Deploy Prometheus using Helm
 resource "helm_release" "prometheus" {
@@ -54,7 +78,7 @@ resource "helm_release" "prometheus" {
   ]
 
   depends_on = [
-    module.eks_blueprints,
+    aws_eks_cluster.chatgpt_cluster,
     module.vpc,
   ]
 }
@@ -74,7 +98,6 @@ resource "helm_release" "grafana" {
   # Add a dependency on the Prometheus deployment
   depends_on = [
     helm_release.prometheus,
-    module.eks_blueprints,
-    module.vpc,
+    aws_eks_cluster.chatgpt_cluster,
   ]
 }
