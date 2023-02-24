@@ -3,11 +3,6 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-variable "cluster_name" {
-  type = string
-  default = "eks-chatgpt"
-}
-
 variable "tags" {
   type = map(string)
   default = {
