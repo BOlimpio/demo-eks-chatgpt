@@ -14,6 +14,33 @@ module "vpc" {
 
 //ToDo create eks cluster and worker nodes with native resources
 
+module "eks_blueprints" {
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.21.0"
+
+  cluster_name    = "chatGPT-cluster"
+
+  # EKS Cluster VPC and Subnet mandatory config
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnets
+
+  # EKS CONTROL PLANE VARIABLES
+  cluster_version = "1.24"
+
+  # EKS MANAGED NODE GROUPS
+  managed_node_groups = {
+    mg_5 = {
+      node_group_name = "ng_chatGPT"
+      instance_types  = ["t3.medium"]
+      subnet_ids      = module.vpc.private_subnets
+    }
+  }
+
+  depends_on = [
+    module.vpc,
+  ]
+
+}
+
 # Deploy Prometheus using Helm
 resource "helm_release" "prometheus" {
   name       = "prometheus"
