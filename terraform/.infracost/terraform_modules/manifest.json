@@ -1,0 +1,1 @@
+{"Path":".","Version":"2.0","Modules":[{"Key":"vpc","Source":"registry.terraform.io/terraform-aws-modules/vpc/aws","Version":"3.19.0","Dir":".infracost/terraform_modules/e32963bba34d6d760c233d0af04caaa0"}]}
